@@ -1,18 +1,44 @@
-name: Build Only
-
+name: Deploy
 on:
   push:
-    branches: [main]
+    branches: main
+  pull_request:
+    branches: main
 
 jobs:
-  build:
+  deploy:
+    name: Deploy
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout 🛎️
-        uses: actions/checkout@v2.3.1
 
-      - name: Install and build 🔧
-        run: |
-          npm install
-          npm run lint:js
-          npm run build
+    permissions:
+      id-token: write # Needed for auth with Deno Deploy
+      contents: read # Needed to clone the repository
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Install Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install step
+        run: "npm install"
+
+      - name: Build step
+        run: "npm run build"
+
+      - name: Upload to Deno Deploy
+        uses: denoland/deployctl@v1
+        with:
+          project: "heisenberg-cutsom-mahj-59"
+          entrypoint: "https://deno.land/std@0.217.0/http/file_server.ts"
+          root: "build"
+          
+          
